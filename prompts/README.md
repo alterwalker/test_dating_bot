@@ -6,7 +6,9 @@
 | [extractor.user.template.md](extractor.user.template.md) | User message + пример |
 | [explainer.system.md](explainer.system.md) | System prompt для объяснения match |
 | [explainer.user.template.md](explainer.user.template.md) | User message + пример |
-| [normalizer.system.md](normalizer.system.md) | Нормализация тегов (опционально) |
+| [icebreaker.system.md](icebreaker.system.md) | Темы + opener при выборе match |
+| [icebreaker.user.template.md](icebreaker.user.template.md) | User message + пример |
+| [icebreaker.schema.json](icebreaker.schema.json) | JSON Schema для icebreaker |
 | [profile.schema.json](profile.schema.json) | JSON Schema для structured output |
 
 ## Когда используются

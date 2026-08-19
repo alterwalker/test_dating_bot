@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://test-dating-bot.local/schemas/icebreaker.json",
+  "title": "Icebreaker",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["conversation_topics", "opener_message"],
+  "properties": {
+    "conversation_topics": {
+      "type": "array",
+      "description": "3–5 конкретных тем для разговора на русском",
+      "items": {
+        "type": "string",
+        "minLength": 10,
+        "maxLength": 120
+      },
+      "minItems": 3,
+      "maxItems": 5
+    },
+    "opener_message": {
+      "type": "string",
+      "description": "Первое сообщение от первого лица viewer",
+      "minLength": 20,
+      "maxLength": 280
+    }
+  }
+}

@@ -24,10 +24,14 @@ Base URL: `http://localhost:8080/v1`
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
+  "user_kind": "telegram",
   "telegram_id": 123456789,
+  "external_id": null,
   "created_at": "2026-08-19T12:00:00Z"
 }
 ```
+
+Вымышленные пользователи (seed) имеют `user_kind: "fictional"`, `external_id: "вымышленный_00001"`, `telegram_id: null`. См. [DEMO.md](DEMO.md).
 
 ---
 
@@ -148,6 +152,8 @@ Base URL: `http://localhost:8080/v1`
       "candidate_id": "...",
       "candidate_name": "Кирилл",
       "candidate_age": 29,
+      "is_fictional": true,
+      "external_id": "вымышленный_00012",
       "score": 0.82,
       "breakdown": {
         "pref_a_to_b": 0.79,
@@ -166,6 +172,37 @@ Base URL: `http://localhost:8080/v1`
 ```
 
 **Response 409:** профиль не в статусе `confirmed`.
+
+**Query (optional):**
+- `include_fictional` (default: значение `DEMO_MODE` на сервере)
+
+---
+
+### `POST /users/{user_id}/matches/{candidate_id}/icebreaker`
+
+Пользователь выбрал анкету из matches — сгенерировать темы для беседы и первое сообщение.
+
+**Response 200:**
+```json
+{
+  "viewer_id": "550e8400-e29b-41d4-a716-446655440000",
+  "candidate_id": "...",
+  "candidate_name": "Кирилл",
+  "shared_interests": ["бег", "собаки"],
+  "shared_values": ["честность"],
+  "conversation_topics": [
+    "Какие дистанции бегаете чаще — 5 км или длиннее?",
+    "Как совмещаете пробежки с работой?",
+    "Есть любимый парк для бега?"
+  ],
+  "opener_message": "Привет! Заметил, что ты тоже бегаешь — как давно этим занимаешься?"
+}
+```
+
+**Response 404:** candidate не найден или не был в допустимом pool matches.  
+**Response 409:** viewer profile не `confirmed`.
+
+Синхронный вызов LLM в api (как explain). Промпты: `prompts/icebreaker.*`.
 
 ---
 

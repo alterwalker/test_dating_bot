@@ -63,11 +63,17 @@ CREATE TYPE job_type AS ENUM ('enrich_profile');
 
 CREATE TABLE users (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    telegram_id BIGINT UNIQUE NOT NULL,
+    user_kind   user_kind NOT NULL DEFAULT 'telegram',  -- migration 002
+    telegram_id BIGINT UNIQUE,                          -- только telegram
+    external_id TEXT UNIQUE,                            -- вымышленный_00001
     username    TEXT,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+```
 
+`user_kind`: `telegram` | `fictional`. Ровно один идентификатор — см. [DEMO.md](DEMO.md).
+
+```sql
 CREATE TABLE profiles (
     user_id       UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     status        profile_status NOT NULL DEFAULT 'draft',

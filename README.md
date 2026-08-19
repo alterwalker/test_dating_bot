@@ -11,7 +11,12 @@
 1. Пользователь заполняет короткую анкету и отвечает на три промпта в Telegram.
 2. **Worker** с помощью LLM извлекает структурированный профиль (теги, оси, summary) и считает embedding.
 3. **API** по жёстким фильтрам и score находит совместимых кандидатов (двусторонний fit).
-4. Бот показывает топ matches с breakdown и кратким объяснением от LLM.
+4. Бот показывает топ matches; при выборе анкеты — **темы для беседы и первое сообщение** (ИИ).
+
+## Demo mode
+
+80–100 вымышленных анкет (`вымышленный_00001`, …) preloaded через seed.  
+Подробнее: [docs/DEMO.md](docs/DEMO.md).
 
 ## Три бинарника
 
@@ -25,17 +30,15 @@
 
 ## Документация
 
-## AI-режим
-
-**По умолчанию:** `AI_MOCK=true` — работает без OpenAI и без интернета.  
-**OpenAI:** `AI_MOCK=false` + `OPENAI_API_KEY` — см. [docs/AI.md](docs/AI.md).
+**AI по умолчанию:** `AI_MOCK=true` — без OpenAI. Для OpenAI: `AI_MOCK=false` + ключ — см. [docs/AI.md](docs/AI.md).
 
 | Файл | Содержание |
 |------|------------|
-| [docs/AI.md](docs/AI.md) | Mock vs OpenAI, интерфейсы, переключение |
+| [docs/AI.md](docs/AI.md) | Mock vs OpenAI, интерфейсы, icebreaker |
+| [docs/DEMO.md](docs/DEMO.md) | Demo mode, вымышленные анкеты, icebreaker |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Модули, границы, потоки данных, деплой |
 | [docs/API.md](docs/API.md) | HTTP-контракты между bot ↔ api |
-| [docs/FSM.md](docs/FSM.md) | Сценарий диалога в Telegram |
+| [docs/FSM.md](docs/FSM.md) | Сценарий диалога, icebreaker flow |
 | [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Сущности, JSON профиля, схема БД |
 | [docs/EMBEDDINGS.md](docs/EMBEDDINGS.md) | Embedding model, pgvector, ANN |
 | [prompts/](prompts/) | System/user промпты и JSON Schema |

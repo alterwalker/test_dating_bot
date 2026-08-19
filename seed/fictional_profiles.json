@@ -1,0 +1,69 @@
+[
+  {
+    "external_id": "вымышленный_00001",
+    "raw": {
+      "name": "Кирилл",
+      "age": 29,
+      "city": "Москва",
+      "gender": "male",
+      "seeking": ["female"],
+      "age_min": 24,
+      "age_max": 34,
+      "prompt_ideal_evening": "Пробежка в парке, потом готовлю ужин дома и смотрю сериал.",
+      "prompt_relationship_values": "Честность, юмор и желание строить что-то вместе, а не просто переписываться.",
+      "prompt_occupation": "Backend-разработчик в fintech, бегаю полумарафоны, люблю экспериментировать на кухне."
+    },
+    "enriched": {
+      "interests": ["бег", "готовка", "it"],
+      "values": ["честность", "юмор"],
+      "lifestyle_axes": {
+        "outgoing": 0.4,
+        "family_oriented": 0.7,
+        "career_focused": 0.6,
+        "adventurous": 0.5,
+        "homebody": 0.65
+      },
+      "relationship_intent": "serious",
+      "communication_style": "спокойный, с лёгким юмором",
+      "dealbreakers_detected": [],
+      "summary": "Разработчик, бегает и готовит дома. Ценит честность и ищет серьёзные отношения."
+    },
+    "embedding": null,
+    "embedding_model": "mock-deterministic-v1",
+    "skip_llm": true,
+    "_note": "embedding: null — заполнить 1536 floats при генерации seed; null только в шаблоне"
+  },
+  {
+    "external_id": "вымышленный_00002",
+    "raw": {
+      "name": "Мария",
+      "age": 27,
+      "city": "Москва",
+      "gender": "female",
+      "seeking": ["male"],
+      "age_min": 25,
+      "age_max": 35,
+      "prompt_ideal_evening": "Йога дома, потом ужин с подругой или книга на диване.",
+      "prompt_relationship_values": "Поддержка, уважение личного пространства и общие планы на будущее.",
+      "prompt_occupation": "UX-дизайнер, йога, путешествия раз в пару месяцев, кошка."
+    },
+    "enriched": {
+      "interests": ["йога", "дизайн", "путешествия", "кошки"],
+      "values": ["поддержка", "уважение"],
+      "lifestyle_axes": {
+        "outgoing": 0.45,
+        "family_oriented": 0.75,
+        "career_focused": 0.55,
+        "adventurous": 0.6,
+        "homebody": 0.7
+      },
+      "relationship_intent": "serious",
+      "communication_style": "мягкий, внимательный",
+      "dealbreakers_detected": [],
+      "summary": "UX-дизайнер, йога и путешествия. Ищет поддерживающие отношения с общими планами."
+    },
+    "embedding": null,
+    "embedding_model": "mock-deterministic-v1",
+    "skip_llm": true
+  }
+]

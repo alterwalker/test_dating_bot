@@ -41,16 +41,18 @@ Mock **не** переключается автоматически при на�
 
 ---
 
-## Три AI-операции
+## Четыре AI-операции
 
-| Операция | Mock | OpenAI |
-|----------|------|--------|
-| **Extract** (raw → enriched JSON) | эвристики + keywords | `gpt-4o-mini` + JSON schema |
-| **Embed** (text → vector) | hash → vector[1536], L2 norm | `text-embedding-3-small` |
-| **Explain** (pair → текст) | шаблон из shared tags | `gpt-4o-mini`, plain text |
+| Операция | Mock | OpenAI | Где |
+|----------|------|--------|-----|
+| **Extract** (raw → enriched JSON) | эвристики + keywords | `gpt-4o-mini` + JSON schema | worker |
+| **Embed** (text → vector) | hash → vector[1536], L2 norm | `text-embedding-3-small` | worker |
+| **Explain** (pair → текст) | шаблон из shared tags | `gpt-4o-mini`, plain text | api, matches |
+| **Icebreaker** (pair → темы + opener) | шаблоны по shared tags | `gpt-4o-mini` + JSON schema | api, on match select |
 
 Extract и Embed — **worker** (`enrich_profile`).  
-Explain — **api** (`GET /matches`, top-3).
+Explain — **api** (`GET /matches`, top-3).  
+Icebreaker — **api** (`POST /matches/{id}/icebreaker`), по действию пользователя.
 
 ---
 
@@ -133,6 +135,23 @@ vec = l2Normalize(vec)
 
 ---
 
+## Mock: Icebreaker
+
+Файл: `internal/ai/mock_icebreaker.go`
+
+1. **conversation_topics** — по 1 вопросу на каждый `shared_interest` (max 5):
+   - `бег` → «Как часто выходите на пробежку?»
+   - `собаки` → «Расскажите про вашего питомца — какая порода?»
+   - fallback → «Чем увлекаетесь в свободное время?»
+
+2. **opener_message** — шаблон:
+   ```
+   «Привет! Увидел, что нам обоим близки {interest_1} и {interest_2}. Как давно этим занимаетесь?»
+   ```
+   Если один interest — только он. Если ноль — нейтральный opener без выдуманных хобби.
+
+---
+
 ## OpenAI: Extract
 
 Файл: `internal/ai/openai_extractor.go`
@@ -185,6 +204,22 @@ messages:
 
 ---
 
+## OpenAI: Icebreaker
+
+Файл: `internal/ai/openai_icebreaker.go`
+
+```
+POST /v1/chat/completions
+model: gpt-4o-mini
+temperature: 0.6
+response_format: json_schema (prompts/icebreaker.schema.json)
+messages:
+  - system: prompts/icebreaker.system.md
+  - user:   build from icebreaker.user.template.md
+```
+
+---
+
 ## Go-интерфейсы
 
 ```go
@@ -204,10 +239,15 @@ type Explainer interface {
     Explain(ctx context.Context, req ExplainRequest) (string, error)
 }
 
+type Icebreaker interface {
+    Icebreaker(ctx context.Context, req IcebreakerRequest) (IcebreakerResult, error)
+}
+
 type Client interface {
     Extractor
     Embedder
     Explainer
+    Icebreaker
     Mode() string // "mock" | "openai"
 }
 ```
@@ -277,9 +317,9 @@ OpenAI SDK подключается в `openai_*.go`; mock-файлы без в�
 ## Чеклист реализации
 
 - [ ] `internal/ai/factory.go` — выбор mock / openai
-- [ ] `mock_extractor.go`, `mock_embedder.go`, `mock_explainer.go`
-- [ ] `openai_extractor.go`, `openai_embedder.go`, `openai_explainer.go`
-- [ ] `//go:embed` для prompts/*.md и profile.schema.json
-- [ ] `.env.example`: `AI_MOCK=true` по умолчанию
-- [ ] README: как переключиться на OpenAI
-- [ ] CI env: `AI_MOCK=true`
+- [ ] `mock_extractor.go`, `mock_embedder.go`, `mock_explainer.go`, `mock_icebreaker.go`
+- [ ] `openai_extractor.go`, `openai_embedder.go`, `openai_explainer.go`, `openai_icebreaker.go`
+- [ ] `//go:embed` для prompts/*
+- [ ] `cmd/seed` + `seed/fictional_profiles.json` (80–100 анкет)
+- [ ] `POST .../icebreaker` в api
+- [ ] bot: MatchList → Icebreaker FSM
