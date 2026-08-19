@@ -139,6 +139,7 @@ type AdminCityStats struct {
 
 type AdminStatsResponse struct {
 	TotalConfirmed int                   `json:"total_confirmed"`
+	TelegramUsers  int                   `json:"telegram_users"`
 	Cities         []AdminCityStats      `json:"cities"`
 	TokenUsage     []AITokenUsageRow     `json:"token_usage,omitempty"`
 	TokenByModel   []AITokenUsageByModel `json:"token_by_model,omitempty"`

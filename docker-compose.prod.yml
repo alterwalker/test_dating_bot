@@ -1,0 +1,73 @@
+# Production на Ubuntu: Postgres (отдельный экземпляр в Docker) + api + worker + bot.
+#
+#   cp .env.prod.example .env
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Postgres на хосте :5432 не трогаем — контейнер слушает POSTGRES_PORT (default 5433).
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: dating_bot_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dating}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dating}
+      POSTGRES_DB: ${POSTGRES_DB:-dating_bot}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dating} -d ${POSTGRES_DB:-dating_bot}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  api:
+    build: .
+    image: dating-bot:local
+    container_name: dating_bot_api
+    command: ["api"]
+    env_file: .env
+    ports:
+      - "${HTTP_PORT:-18080}:8080"
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  worker:
+    build: .
+    image: dating-bot:local
+    container_name: dating_bot_worker
+    command: ["worker"]
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  bot:
+    build: .
+    image: dating-bot:local
+    container_name: dating_bot_bot
+    command: ["bot"]
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

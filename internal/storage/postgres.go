@@ -583,6 +583,13 @@ LIMIT $1`
 		return domain.AdminStatsResponse{}, err
 	}
 
+	const telegramQ = `
+SELECT COUNT(*) FROM users
+WHERE user_kind = 'telegram' AND telegram_id IS NOT NULL`
+	if err := s.pool.QueryRow(ctx, telegramQ).Scan(&resp.TelegramUsers); err != nil {
+		return domain.AdminStatsResponse{}, err
+	}
+
 	if err := s.loadTokenUsage(ctx, &resp); err != nil {
 		return domain.AdminStatsResponse{}, err
 	}

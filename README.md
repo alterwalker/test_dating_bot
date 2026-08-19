@@ -127,7 +127,8 @@ docker compose up -d
 # проверка: docker compose exec postgres pg_isready -U dating -d dating_bot
 ```
 
-Подробнее: [docs/DOCKER.md](docs/DOCKER.md).
+Подробнее: [docs/DOCKER.md](docs/DOCKER.md) (локальный Postgres).  
+**Сервер (Ubuntu):** [docs/DEPLOY.md](docs/DEPLOY.md) — rsync, `docker-compose.prod.yml` (Postgres + api + worker + bot в Docker).
 
 ### 2. Go-сервисы (на хосте)
 

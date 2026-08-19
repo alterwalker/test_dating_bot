@@ -55,7 +55,8 @@ func showAdminStats(ctx context.Context, client *apiClient, token string, chatID
 func formatAdminCityStats(stats domain.AdminStatsResponse) string {
 	var b strings.Builder
 	b.WriteString("📊 Admin статистика\n\n")
-	b.WriteString(fmt.Sprintf("Анкеты confirmed: %d\n\n", stats.TotalConfirmed))
+	b.WriteString(fmt.Sprintf("Анкеты confirmed: %d\n", stats.TotalConfirmed))
+	b.WriteString(fmt.Sprintf("👤 Telegram-пользователи: %d\n\n", stats.TelegramUsers))
 
 	b.WriteString("🏙 Города (топ-10)\n")
 	if len(stats.Cities) == 0 {

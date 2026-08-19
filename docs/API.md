@@ -253,6 +253,7 @@ Base URL: `http://localhost:8080/v1`
 ```json
 {
   "total_confirmed": 5012,
+  "telegram_users": 3,
   "cities": [
     { "city": "Москва", "male": 120, "female": 115, "total": 235 }
   ],

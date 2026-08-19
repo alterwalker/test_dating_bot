@@ -1,0 +1,12 @@
+.git
+.idea
+.env
+.env.*
+!.env.prod.example
+bot
+enrich_seed
+seed/fictional_profiles.json
+seed/*.openai.json
+seed/smoke.json
+**/*.test
+**/testdata
