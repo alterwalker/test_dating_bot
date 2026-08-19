@@ -1,0 +1,18 @@
+.env
+*.exe
+*.test
+/bin/
+/dist/
+/vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+
+# Data
+*.db
+*.sqlite

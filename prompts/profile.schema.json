@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://test-dating-bot.local/schemas/enriched-profile.json",
+  "title": "EnrichedProfile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "interests",
+    "values",
+    "lifestyle_axes",
+    "relationship_intent",
+    "communication_style",
+    "dealbreakers_detected",
+    "summary"
+  ],
+  "properties": {
+    "interests": {
+      "type": "array",
+      "description": "Хобби и увлечения. 3–8 элементов, lowercase, на русском, без дубликатов.",
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 40
+      },
+      "minItems": 1,
+      "maxItems": 10
+    },
+    "values": {
+      "type": "array",
+      "description": "Ценности в отношениях и жизни. 2–6 элементов.",
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 40
+      },
+      "minItems": 1,
+      "maxItems": 8
+    },
+    "lifestyle_axes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outgoing",
+        "family_oriented",
+        "career_focused",
+        "adventurous",
+        "homebody"
+      ],
+      "properties": {
+        "outgoing": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Насколько человек общительный и тусовочный"
+        },
+        "family_oriented": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Ориентация на семью и детей"
+        },
+        "career_focused": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Фокус на карьере и амбициях"
+        },
+        "adventurous": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Любовь к новому, путешествиям, риску"
+        },
+        "homebody": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Предпочтение домашнего уюта"
+        }
+      }
+    },
+    "relationship_intent": {
+      "type": "string",
+      "enum": ["serious", "casual", "friendship", "unsure"],
+      "description": "serious=серьёзные отношения, casual=лёгкие свидания, friendship=дружба, unsure=не определился"
+    },
+    "communication_style": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 120,
+      "description": "Краткое описание стиля общения по тексту"
+    },
+    "dealbreakers_detected": {
+      "type": "array",
+      "description": "Только если явно упомянуто в тексте. Пустой массив, если ничего нет.",
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 40
+      },
+      "maxItems": 5
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 280,
+      "description": "2–3 предложения для показа пользователю"
+    },
+    "extraction_notes": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Опционально: что было неоднозначно при извлечении"
+    }
+  }
+}
