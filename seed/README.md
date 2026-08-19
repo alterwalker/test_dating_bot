@@ -4,6 +4,12 @@
 
 ## Формат `fictional_profiles.json`
 
+Файл **не коммитится** (см. `.gitignore`): mock-версия ~7 MB, после `enrich_seed` — 100+ MB. Сгенерировать:
+
+```bash
+go run ./cmd/generate_seed -count 4920 -wide 80 -seed 42 -out seed/fictional_profiles.json
+```
+
 ```json
 [
   {

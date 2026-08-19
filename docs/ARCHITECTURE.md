@@ -36,22 +36,22 @@
 
 **Не содержит:** SQL, промпты, scoring, вызовы OpenAI.
 
-**Зависимости:** только `pkg/apiclient` (или inline HTTP) + конфиг (`BOT_TOKEN`, `API_BASE_URL`).
+**Зависимости:** inline HTTP-клиент + конфиг (`BOT_TOKEN`, `API_BASE_URL`).
 
 ---
 
 ### 2. `cmd/api` — Platform API
 
 **Ответственность:**
-- CRUD пользователей и профилей;
+- CRUD пользователей и профилей (включая удаление анкеты);
 - создание job `enrich_profile`;
-- синхронный матчинг (`GET /matches`);
-- опционально: LLM explain для top-3 (можно вынести в worker позже);
-- миграции БД при старте (или отдельная команда).
+- синхронный матчинг (`GET /matches`), скрытие кандидатов;
+- LLM explain для top-3 и icebreaker по запросу;
+- admin-статистика (города, token usage).
 
 **Не содержит:** Telegram SDK, FSM.
 
-**Endpoints:** см. [API.md](API.md).
+**Endpoints:** см. [API.md](API.md). Миграции — SQL-файлы в `migrations/`, применяются вручную или через init Postgres.
 
 ---
 
@@ -76,23 +76,27 @@
 
 ```
 internal/
-├── domain/       # User, Profile, RawProfile, EnrichedProfile, Job, Match
-├── storage/      # репозитории, SQL
-├── profile/      # сервис профилей (используется api + worker)
+├── domain/          # User, Profile, Job, Match, AdminStats
+├── config/          # env-конфиг
+├── storage/         # Postgres, pgvector, jobs, match_hides
+├── profile/         # lifecycle профиля (api)
 ├── matching/
-│   ├── filters.go    # жёсткие фильтры
-│   ├── retrieval.go  # top-K по грубому score
-│   └── scorer.go     # двусторонний rank
+│   ├── scorer.go    # FilterCandidates, TopRetrieve, RankMatches, ScorePair
+│   └── service.go   # FindMatches, Icebreaker, HideMatch
 ├── ai/
-│   ├── client.go     # OpenAI / mock
-│   ├── extractor.go
-│   ├── embedder.go
-│   ├── explainer.go
-│   └── prompts.go    # загрузка файлов из prompts/
-└── jobs/
-    ├── repository.go
-    └── handler.go    # dispatch по job type
+│   ├── client.go    # интерфейс Client + factory
+│   ├── openai.go    # Extract, Embed, Explain, Icebreaker
+│   ├── mock.go      # mock-реализация (default)
+│   └── usage.go     # учёт токенов OpenAI
+├── jobs/
+│   └── processor.go # enrich_profile handler
+├── api/
+│   └── server.go    # HTTP handlers
+├── seedgen/         # generate_seed
+└── seedenrich/      # enrich_seed CLI logic
 ```
+
+Промпты лежат в `prompts/` и подгружаются из `internal/ai/openai.go` (константы) и шаблонов в docs.
 
 ### Границы ответственности
 
@@ -118,9 +122,12 @@ User → bot (FSM, 3 промпта)
   → bot показывает «⏳ Обрабатываю…»
   → worker: LLM extract + embed → enriched profile
   → bot poll GET /profile/status → ready
-  → bot показывает разметку + [✅ Верно] [✏️ Исправить]
+  → bot показывает summary, auto-confirm
   → api POST /profile/confirm
 ```
+
+Редактирование: bot → review по полям → повторный enrich.  
+Удаление: `DELETE /profile` — сброс анкеты в `draft`.
 
 ### Подбор пар
 
@@ -130,6 +137,7 @@ User → bot «Найти пары»
   → filters → retrieve (top-K) → rank (two-sided)
   → api: explainer для top-3 (LLM)
   → bot: карточки с score + explanation
+  → bot: скрытие кандидата POST .../hide (не показывать снова)
 ```
 
 ---
@@ -175,7 +183,6 @@ match(A,B) = 0.8 * harmonic_mean(pref(A→B), pref(B→A))
 ```
 
 Итоговый score в диапазоне 0–1 (100%).
-```
 
 `harmonic_mean(a,b) = 2ab / (a+b)` — слабая односторонняя совместимость тянет score вниз.
 
@@ -223,32 +230,32 @@ Worker:
 
 ## Деплой (MVP)
 
-Три процесса + Postgres:
+Postgres через [docker-compose.yml](../docker-compose.yml); Go-сервисы — на хосте (см. [README.md](../README.md) и [DOCKER.md](DOCKER.md)):
 
-```yaml
-# docker-compose.yml — добавить при реализации
-services:
-  postgres:
-    image: pgvector/pgvector:pg16
-  api: ...
-  worker: ...
-  bot: ...
+```bash
+docker compose up -d
+go run ./cmd/seed
+go run ./cmd/api &
+go run ./cmd/worker &
+go run ./cmd/bot
 ```
-
-Для локальной разработки достаточно SQLite в `DATABASE_URL` (если реализовать драйвер).
 
 ---
 
-## Этапы реализации
+## Статус реализации
 
-1. **domain + migrations + storage** — users, profiles, jobs
-2. **api** — endpoints без AI
-3. **worker** — enrich_profile с mock AI
-4. **matching** — filters + scorer
-5. **ai** — OpenAI extractor + embedder
-6. **bot** — FSM + интеграция с api
-7. **explainer** — top-3 explanations
-8. **seed** — 10–15 профилей для демо
+MVP закрыт. Дополнительные утилиты: `cmd/generate_seed`, `cmd/enrich_seed`, `cmd/seed`.
+
+| Компонент | Статус |
+|-----------|--------|
+| domain + migrations + storage | ✅ |
+| api endpoints | ✅ |
+| worker enrich_profile | ✅ |
+| matching (filters + ANN + rank) | ✅ |
+| ai mock + OpenAI | ✅ |
+| bot FSM + matches + icebreaker | ✅ |
+| demo seed (~5000 fictional) | ✅ |
+| profile edit / delete, match hide | ✅ |
 
 ---
 
@@ -259,4 +266,5 @@ services:
 | Explain в api vs worker | api (проще UX) | worker при нагрузке |
 | SQLite vs Postgres | Postgres | SQLite для CI |
 | Webhook vs polling | polling | webhook на проде |
-| Редактирование профиля | повтор enrich | partial update |
+| Редактирование профиля | ✅ review + re-enrich | partial update без re-embed |
+| Auth / rate limits | — | JWT, Telegram initData, admin token |

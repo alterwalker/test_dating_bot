@@ -2,7 +2,9 @@
 
 Base URL: `http://localhost:8080/v1`
 
-Все ответы — JSON. Ошибки: `{ "error": "message", "code": "NOT_FOUND" }`.
+Все ответы — JSON. Ошибки: `{ "error": "message" }`.
+
+**Auth:** в MVP не реализован — см. [README.md](../README.md#безопасность-mvp).
 
 ---
 
@@ -134,6 +136,19 @@ Base URL: `http://localhost:8080/v1`
 }
 ```
 
+**Response 409:** профиль не в статусе `ready`.
+
+---
+
+### `DELETE /users/{user_id}/profile`
+
+Полное удаление анкеты Telegram-пользователя: сброс `raw`, `enriched`, embedding, статус → `draft`; отмена pending jobs `enrich_profile`.
+
+**Response 204:** без тела.
+
+**Response 404:** пользователь не найден.  
+**Response 409:** fictional-профиль или конфликт.
+
 ---
 
 ## Matches
@@ -176,6 +191,28 @@ Base URL: `http://localhost:8080/v1`
 **Query (optional):**
 - `include_fictional` (default: значение `DEMO_MODE` на сервере)
 
+**Response 409:** профиль не в статусе `confirmed`.
+
+---
+
+### `GET /users/{user_id}/matches/{candidate_id}`
+
+Полный профиль кандидата для карточки match (summary, interests, промпты, shared tags).
+
+**Response 200:** объект `CandidateProfile` (см. domain).  
+**Response 404** / **409:** как у matches.
+
+---
+
+### `POST /users/{user_id}/matches/{candidate_id}/hide`
+
+Скрыть кандидата — не показывать в будущих `GET /matches` для этого viewer.
+
+**Response 204:** без тела.
+
+**Response 404:** кандидат не найден.  
+**Response 409:** viewer profile не `confirmed`.
+
 ---
 
 ### `POST /users/{user_id}/matches/{candidate_id}/icebreaker`
@@ -206,6 +243,48 @@ Base URL: `http://localhost:8080/v1`
 
 ---
 
+## Admin
+
+### `GET /v1/admin/stats/cities`
+
+Агрегированная статистика для demo/admin UI в боте.
+
+**Response 200:**
+```json
+{
+  "total_confirmed": 5012,
+  "cities": [
+    { "city": "Москва", "male": 120, "female": 115, "total": 235 }
+  ],
+  "token_usage": [
+    {
+      "model": "gpt-4o-mini",
+      "operation": "extract",
+      "source": "worker",
+      "prompt_tokens": 12000,
+      "completion_tokens": 3000,
+      "total_tokens": 15000,
+      "request_count": 42
+    }
+  ],
+  "token_by_model": [
+    {
+      "model": "gpt-4o-mini",
+      "prompt_tokens": 50000,
+      "completion_tokens": 8000,
+      "total_tokens": 58000,
+      "request_count": 200
+    }
+  ]
+}
+```
+
+`token_usage` / `token_by_model` пусты при `AI_MOCK=true` или без миграции `003_ai_token_usage.sql`.
+
+**Auth:** не реализован (MVP) — endpoint публичный при доступе к api.
+
+---
+
 ## Health
 
 ### `GET /health`
@@ -220,8 +299,8 @@ Worker: `GET :8081/health` — аналогично.
 
 ## Enum values
 
-**gender:** `male` | `female` | `other`
+**gender:** `male` | `female`
 
-**seeking:** массив из `male` | `female` | `other`
+**seeking:** массив из `male` | `female`
 
 **relationship_intent** (из enriched): `serious` | `casual` | `friendship` | `unsure`

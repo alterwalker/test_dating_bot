@@ -1,7 +1,9 @@
 # cmd/worker
 
-Фоновый worker: job `enrich_profile` (LLM + embedding).
+Фоновый worker: job `enrich_profile` (LLM extract + embedding).
 
-Промпты: [prompts/](../prompts/)
+**Реализовано:** poll таблицы `jobs` (`FOR UPDATE SKIP LOCKED`), retry с backoff, healthcheck `:8081/health`.
 
-Реализация: pending.
+Промпты: [prompts/](../prompts/) · AI: [docs/AI.md](../docs/AI.md)
+
+Запуск: `go run ./cmd/worker`

@@ -16,3 +16,12 @@
 # Data
 *.db
 *.sqlite
+
+# Seed (генерируется локально; enrich раздувает файл до сотен MB)
+seed/fictional_profiles.json
+seed/*.openai.json
+seed/smoke.json
+
+# Локальные бинарники
+/bot
+/enrich_seed

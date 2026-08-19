@@ -15,7 +15,7 @@
 
 ## Demo mode
 
-~5000 вымышленных анкет загружаются через `cmd/seed`. Для OpenAI-enrich: `go run ./cmd/enrich_seed` — см. [cmd/enrich_seed/README.md](cmd/enrich_seed/README.md).  
+~5000 вымышленных анкет загружаются через `cmd/seed`. Файл `seed/fictional_profiles.json` **не в git** (генерируется локально, после OpenAI-enrich — сотни MB). Сначала: `go run ./cmd/generate_seed`. OpenAI-enrich: `go run ./cmd/enrich_seed` — см. [cmd/enrich_seed/README.md](cmd/enrich_seed/README.md).  
 Подробнее: [docs/DEMO.md](docs/DEMO.md).
 
 ## Три бинарника
@@ -108,11 +108,15 @@
 
 ## Стек
 
-- Go 1.22+
+- **Go 1.25+** (версия в [go.mod](go.mod))
 - PostgreSQL + **pgvector** (`pgvector/pgvector:pg16`)
 - Telegram Bot API (long polling, прямые HTTP-запросы)
 - OpenAI (опционально): LLM `gpt-4o-mini` + `text-embedding-3-small` при `AI_MOCK=false`
 - **Default:** `AI_MOCK=true` — keyword extract + deterministic embed + template explain
+
+## Безопасность (MVP)
+
+Для тестового MVP **намеренно не реализованы** auth, проверка владельца `user_id` и защита admin-эндпоинтов. Любой клиент с UUID может вызывать API; `GET /v1/admin/stats/cities` публичен. Это осознанный компромисс скорости разработки — в production-плане: JWT или Telegram `initData`, rate limits, закрытый admin.
 
 ## Быстрый старт
 
@@ -129,7 +133,8 @@ docker compose up -d
 
 ```bash
 cp .env.example .env   # BOT_TOKEN, при необходимости OPENAI_API_KEY
-go run ./cmd/seed      # вымышленные анкеты (~5000)
+go run ./cmd/generate_seed   # seed/fictional_profiles.json (~5000, mock)
+go run ./cmd/seed              # загрузка в Postgres
 go run ./cmd/api &     # :8080
 go run ./cmd/worker &  # :8081
 go run ./cmd/bot       # нужен BOT_TOKEN
@@ -153,3 +158,4 @@ go test ./...
 | **Системные метрики** | Нет Prometheus/Grafana, алертов, трейсинга и дашбордов по latency/ошибкам api, worker, bot |
 | **Бизнес-метрики** | Нет воронок (регистрация → анкета → match → icebreaker), retention, конверсий и A/B-срезов |
 | **Логирование матчей и действий** | Не пишется история показов, кликов, выбранных кандидатов и feedback — нельзя автоматически ловить ошибки подбора и итеративно подкручивать промпты по данным |
+| **Auth и authorization API** | См. [Безопасность (MVP)](#безопасность-mvp) — отложено, но заложено в roadmap масштабирования |
