@@ -3,8 +3,8 @@
 .env
 .env.*
 !.env.prod.example
-bot
-enrich_seed
+/bot
+/enrich_seed
 seed/fictional_profiles.json
 seed/*.openai.json
 seed/smoke.json
