@@ -24,6 +24,7 @@ func main() {
 	workers := flag.Int("workers", 3, "parallel OpenAI requests")
 	loadDB := flag.Bool("load-db", false, "upsert each profile into Postgres after enrich")
 	allowMock := flag.Bool("allow-mock", false, "allow AI_MOCK=true (for tests only)")
+	skipExisting := flag.Bool("skip-existing", true, "skip entries that already have embedding")
 	flag.Parse()
 
 	cfg, err := config.Load()
@@ -67,36 +68,55 @@ func main() {
 			end = total
 		}
 	}
-	count := end - *offset
-	if count <= 0 {
+	rangeCount := end - *offset
+	if rangeCount <= 0 {
 		log.Fatal("nothing to process: check -offset/-limit")
 	}
 
+	toProcess := 0
+	skippedInRange := 0
+	for idx := *offset; idx < end; idx++ {
+		if *skipExisting && seedenrich.HasEmbedding(entries[idx]) {
+			skippedInRange++
+		} else {
+			toProcess++
+		}
+	}
+
 	fmt.Printf("enrich_seed: mode=%s model=%s embed=%s\n", client.Mode(), cfg.OpenAIModel, client.EmbedModel())
-	fmt.Printf("profiles: %d total, processing %d (offset=%d)\n", total, count, *offset)
+	fmt.Printf("profiles: %d total, range=%d (offset=%d), to_process=%d, skip_existing=%v\n",
+		total, rangeCount, *offset, toProcess, *skipExisting)
+	if *skipExisting && skippedInRange > 0 {
+		fmt.Printf("skipped in range (already have embedding): %d\n", skippedInRange)
+	}
 	fmt.Printf("workers=%d in_place=%v load_db=%v\n", *workers, *inPlace, *loadDB)
-	if client.Mode() == "openai" {
-		fmt.Printf("≈ API calls: %d extract + %d embed = %d requests\n", count, count, count*2)
+	if client.Mode() == "openai" && toProcess > 0 {
+		fmt.Printf("≈ API calls: %d extract + %d embed = %d requests\n", toProcess, toProcess, toProcess*2)
+	}
+	if toProcess == 0 {
+		fmt.Println("nothing to enrich in this range — all entries already have embeddings")
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
 	result, err := seedenrich.Run(ctx, client, seedenrich.Options{
-		InputPath:   *file,
-		OutputPath:  *out,
-		InPlace:     *inPlace,
-		Offset:      *offset,
-		Limit:       *limit,
-		Workers:     *workers,
-		LoadDB:      *loadDB,
-		DatabaseURL: cfg.DatabaseURL,
+		InputPath:    *file,
+		OutputPath:   *out,
+		InPlace:      *inPlace,
+		Offset:       *offset,
+		Limit:        *limit,
+		Workers:      *workers,
+		LoadDB:       *loadDB,
+		DatabaseURL:  cfg.DatabaseURL,
+		SkipExisting: *skipExisting,
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("\ndone: processed=%d failed=%d output=%s\n", result.Processed, result.Failed, result.Output)
+	fmt.Printf("\ndone: processed=%d skipped=%d failed=%d output=%s\n",
+		result.Processed, result.Skipped, result.Failed, result.Output)
 	if result.Failed > 0 {
 		os.Exit(1)
 	}

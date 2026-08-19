@@ -314,6 +314,36 @@ func (s *Store) GetViewerCandidate(ctx context.Context, viewerID, candidateID uu
 	return viewer, candidate, nil
 }
 
+func (s *Store) HideMatch(ctx context.Context, viewerID, candidateID uuid.UUID) error {
+	if viewerID == candidateID {
+		return ErrConflict
+	}
+	_, err := s.pool.Exec(ctx, `
+INSERT INTO match_hides (viewer_id, candidate_id)
+VALUES ($1, $2)
+ON CONFLICT (viewer_id, candidate_id) DO NOTHING`, viewerID, candidateID)
+	return err
+}
+
+func (s *Store) ListHiddenCandidateIDs(ctx context.Context, viewerID uuid.UUID) (map[uuid.UUID]struct{}, error) {
+	const q = `SELECT candidate_id FROM match_hides WHERE viewer_id = $1`
+	rows, err := s.pool.Query(ctx, q, viewerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := map[uuid.UUID]struct{}{}
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out[id] = struct{}{}
+	}
+	return out, rows.Err()
+}
+
 func (s *Store) ListConfirmedCandidates(ctx context.Context, viewerID uuid.UUID, demoMode bool, retrievalMode string, topK int) ([]domain.CandidateRow, error) {
 	viewer, err := s.getCandidateRow(ctx, viewerID)
 	if err != nil {

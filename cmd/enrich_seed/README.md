@@ -35,8 +35,11 @@ AI_MOCK=false go run ./cmd/enrich_seed -in-place -workers 5
 # тест на 10 анкетах в отдельный файл
 AI_MOCK=false go run ./cmd/enrich_seed -limit 10 -out seed/sample.openai.json
 
-# продолжить с 2500-й (resume после сбоя)
-AI_MOCK=false go run ./cmd/enrich_seed -in-place -offset 2500 -workers 5
+# продолжить после сбоя — по умолчанию пропускает записи с embedding
+AI_MOCK=false go run ./cmd/enrich_seed -in-place -workers 5
+
+# пересчитать всё заново (включая уже обогащённые)
+AI_MOCK=false go run ./cmd/enrich_seed -in-place -skip-existing=false -workers 5
 
 # enrich + сразу в БД
 AI_MOCK=false go run ./cmd/enrich_seed -in-place -workers 5 -load-db
@@ -54,6 +57,7 @@ AI_MOCK=false go run ./cmd/enrich_seed -in-place -workers 5 -load-db
 | `-workers` | 3 | параллельных запросов к OpenAI |
 | `-load-db` | false | upsert в Postgres после каждого профиля |
 | `-allow-mock` | false | разрешить `AI_MOCK=true` (тесты) |
+| `-skip-existing` | **true** | пропускать записи с непустым `embedding` |
 
 ## Поведение при сбоях
 

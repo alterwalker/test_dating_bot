@@ -174,6 +174,9 @@ func handleCallback(ctx context.Context, client *apiClient, states *stateStore, 
 	if strings.HasPrefix(data, "profile:") {
 		return handleProfileCallback(ctx, client, states, token, chatID, userID, data)
 	}
+	if strings.HasPrefix(data, "hide:") {
+		return handleHideCallback(ctx, client, token, chatID, userID, data)
+	}
 	if strings.HasPrefix(data, "candidate:") {
 		candidateID, ok := parseCandidateCallback(data)
 		if !ok {

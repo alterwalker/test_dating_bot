@@ -16,22 +16,28 @@ import (
 )
 
 type Options struct {
-	InputPath   string
-	OutputPath  string
-	InPlace     bool
-	Offset      int
-	Limit       int
-	Workers     int
-	LoadDB      bool
-	DatabaseURL string
-	Checkpoint  int
-	MaxRetries  int
+	InputPath    string
+	OutputPath   string
+	InPlace      bool
+	Offset       int
+	Limit        int
+	Workers      int
+	LoadDB       bool
+	DatabaseURL  string
+	Checkpoint   int
+	MaxRetries   int
+	SkipExisting bool // default true via cmd/enrich_seed
 }
 
 type Result struct {
 	Processed int
+	Skipped   int
 	Failed    int
 	Output    string
+}
+
+func HasEmbedding(e seedgen.Entry) bool {
+	return len(e.Embedding) > 0
 }
 
 func LoadEntries(path string) ([]seedgen.Entry, error) {
@@ -144,6 +150,7 @@ func Run(ctx context.Context, client ai.Client, opts Options) (Result, error) {
 	var wg sync.WaitGroup
 	var failed int64
 	var processed int64
+	var skipped int64
 	var mu sync.Mutex
 	flush := func() error {
 		mu.Lock()
@@ -206,6 +213,10 @@ func Run(ctx context.Context, client ai.Client, opts Options) (Result, error) {
 	}
 
 	for idx := start; idx < end; idx++ {
+		if opts.SkipExisting && HasEmbedding(entries[idx]) {
+			atomic.AddInt64(&skipped, 1)
+			continue
+		}
 		select {
 		case <-ctx.Done():
 			close(jobs)
@@ -223,6 +234,7 @@ func Run(ctx context.Context, client ai.Client, opts Options) (Result, error) {
 
 	return Result{
 		Processed: int(processed),
+		Skipped:   int(skipped),
 		Failed:    int(failed),
 		Output:    outPath,
 	}, nil

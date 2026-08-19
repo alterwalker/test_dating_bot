@@ -37,6 +37,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /v1/users/{id}/matches", s.handleMatches)
 	mux.HandleFunc("GET /v1/users/{id}/matches/{candidate_id}", s.handleMatchCandidate)
 	mux.HandleFunc("POST /v1/users/{id}/matches/{candidate_id}/icebreaker", s.handleIcebreaker)
+	mux.HandleFunc("POST /v1/users/{id}/matches/{candidate_id}/hide", s.handleHideMatch)
 	return mux
 }
 
@@ -259,6 +260,30 @@ func (s *Server) handleIcebreaker(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, result)
+}
+
+func (s *Server) handleHideMatch(w http.ResponseWriter, r *http.Request) {
+	viewerID, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid user id")
+		return
+	}
+	candidateID, err := uuid.Parse(r.PathValue("candidate_id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid candidate id")
+		return
+	}
+	if err := s.matches.HideMatch(r.Context(), viewerID, candidateID); errors.Is(err, storage.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "not found")
+		return
+	} else if errors.Is(err, storage.ErrConflict) {
+		writeError(w, http.StatusConflict, "profile not confirmed")
+		return
+	} else if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

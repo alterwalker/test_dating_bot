@@ -7,6 +7,7 @@ import (
 
 	"github.com/alterwalker/test_dating_bot/internal/ai"
 	"github.com/alterwalker/test_dating_bot/internal/domain"
+	"github.com/google/uuid"
 )
 
 func Harmonic(a, b float64) float64 {
@@ -207,6 +208,20 @@ func FilterCandidates(viewer domain.CandidateRow, candidates []domain.CandidateR
 			continue
 		}
 		if !AgeInRange(viewer.Raw.Age, c.Raw.AgeMin, c.Raw.AgeMax) {
+			continue
+		}
+		out = append(out, c)
+	}
+	return out
+}
+
+func ExcludeHidden(candidates []domain.CandidateRow, hidden map[uuid.UUID]struct{}) []domain.CandidateRow {
+	if len(hidden) == 0 {
+		return candidates
+	}
+	out := make([]domain.CandidateRow, 0, len(candidates))
+	for _, c := range candidates {
+		if _, ok := hidden[c.UserID]; ok {
 			continue
 		}
 		out = append(out, c)

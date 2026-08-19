@@ -40,6 +40,12 @@ func (s *Service) FindMatches(ctx context.Context, viewerID uuid.UUID, limit int
 		return nil, 0, err
 	}
 
+	hidden, err := s.store.ListHiddenCandidateIDs(ctx, viewerID)
+	if err != nil {
+		return nil, 0, err
+	}
+	candidates = ExcludeHidden(candidates, hidden)
+
 	filtered := FilterCandidates(viewer, candidates, s.cfg.DemoMode)
 	retrieved := TopRetrieve(viewer, filtered, s.cfg.RetrievalTopK)
 	ranked := RankMatches(viewer, retrieved, limit)
@@ -125,6 +131,20 @@ func (s *Service) Icebreaker(ctx context.Context, viewerID, candidateID uuid.UUI
 	result.SharedInterests = sharedInterests
 	result.SharedValues = sharedValues
 	return result, nil
+}
+
+func (s *Service) HideMatch(ctx context.Context, viewerID, candidateID uuid.UUID) error {
+	prof, err := s.store.GetProfile(ctx, viewerID)
+	if err != nil {
+		return err
+	}
+	if prof.Status != domain.ProfileConfirmed {
+		return storage.ErrConflict
+	}
+	if _, err := s.store.GetProfile(ctx, candidateID); err != nil {
+		return err
+	}
+	return s.store.HideMatch(ctx, viewerID, candidateID)
 }
 
 func (s *Service) GetCandidateProfile(ctx context.Context, viewerID, candidateID uuid.UUID) (domain.CandidateProfile, error) {

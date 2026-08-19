@@ -11,7 +11,56 @@ import (
 
 func matchCardKeyboard(candidateID uuid.UUID) string {
 	id := candidateID.String()
-	return fmt.Sprintf(`{"inline_keyboard":[[{"text":"📋 Показать профиль","callback_data":"candidate:%s"},{"text":"💬 Начать общение","callback_data":"icebreaker:%s"}]]}`, id, id)
+	return fmt.Sprintf(`{"inline_keyboard":[[{"text":"📋 Показать профиль","callback_data":"candidate:%s"},{"text":"💬 Начать общение","callback_data":"icebreaker:%s"}],[{"text":"🚫 Не показывать","callback_data":"hide:ask:%s"}]]}`, id, id, id)
+}
+
+func hideConfirmKeyboard(candidateID uuid.UUID) string {
+	id := candidateID.String()
+	return fmt.Sprintf(`{"inline_keyboard":[[{"text":"✅ Да, скрыть","callback_data":"hide:yes:%s"},{"text":"❌ Отмена","callback_data":"hide:cancel"}]]}`, id)
+}
+
+func handleHideCallback(ctx context.Context, client *apiClient, token string, chatID int64, userID, data string) error {
+	parts := strings.Split(data, ":")
+	if len(parts) < 2 || parts[0] != "hide" {
+		return nil
+	}
+	switch parts[1] {
+	case "ask":
+		if len(parts) < 3 {
+			return nil
+		}
+		candidateID, ok := parseCandidateID(parts[2])
+		if !ok {
+			return nil
+		}
+		return sendMessageWithKeyboard(ctx, token, chatID,
+			"Скрыть эту анкету?\n\nОна больше не будет появляться в ваших Matches.",
+			hideConfirmKeyboard(candidateID))
+	case "yes":
+		if len(parts) < 3 {
+			return nil
+		}
+		candidateID, ok := parseCandidateID(parts[2])
+		if !ok {
+			return nil
+		}
+		if err := client.postJSON(ctx, fmt.Sprintf("/users/%s/matches/%s/hide", userID, candidateID.String()), nil, nil); err != nil {
+			return sendWithMainMenu(ctx, token, chatID, "Не удалось скрыть анкету: "+err.Error())
+		}
+		return sendWithMainMenu(ctx, token, chatID, "Анкета скрыта. Нажмите «🔍 Matches», чтобы обновить список.")
+	case "cancel":
+		return sendWithMainMenu(ctx, token, chatID, "Скрытие отменено.")
+	default:
+		return nil
+	}
+}
+
+func parseCandidateID(s string) (uuid.UUID, bool) {
+	id, err := uuid.Parse(s)
+	if err != nil {
+		return uuid.Nil, false
+	}
+	return id, true
 }
 
 func showCandidateProfile(ctx context.Context, client *apiClient, token string, chatID int64, userID, candidateID string) error {
