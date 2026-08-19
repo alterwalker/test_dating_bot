@@ -114,10 +114,10 @@ docker compose -f docker-compose.prod.yml run --rm --no-deps \
   api -out /seed/fictional_profiles.json
 
 # загрузить в Postgres (postgres должен быть запущен)
+# .env подхватывается из env_file сервиса api в compose — отдельный --env-file не нужен
 docker compose -f docker-compose.prod.yml up -d postgres
 docker compose -f docker-compose.prod.yml run --rm \
   -v "$(pwd)/seed:/seed" \
-  --env-file .env \
   --entrypoint seed \
   api -file /seed/fictional_profiles.json
 ```
