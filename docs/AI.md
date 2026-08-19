@@ -282,13 +282,17 @@ func NewClient(cfg Config) (Client, error) {
 
 `seed/profiles.json` содержит **precomputed enriched + embedding**, посчитанные в mock-режиме.
 
-Для OpenAI-demo: отдельный `seed/profiles.openai.json` или перегенерация скриптом:
+Для OpenAI-demo:
 
 ```bash
-AI_MOCK=false go run ./cmd/seed --regenerate-embeddings
+go run ./cmd/generate_seed
+AI_MOCK=false go run ./cmd/enrich_seed -in-place -workers 5
+go run ./cmd/seed   # если enrich_seed без -load-db
 ```
 
-(скрипт — при реализации)
+См. [cmd/enrich_seed/README.md](../cmd/enrich_seed/README.md).
+
+(ранее планировался `--regenerate-embeddings` в cmd/seed — заменён на `enrich_seed`)
 
 ---
 

@@ -1,0 +1,27 @@
+# Local infrastructure: Postgres + pgvector only.
+# Go services (api, worker, bot) run on the host — see README.
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: dating_bot_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dating
+      POSTGRES_PASSWORD: dating
+      POSTGRES_DB: dating_bot
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Runs once on first start (empty volume), in filename order
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dating -d dating_bot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  postgres_data:

@@ -1,6 +1,6 @@
 # Seed: вымышленные анкеты (demo mode)
 
-80–100 precomputed профилей для демонстрации матчинга. См. [docs/DEMO.md](../docs/DEMO.md).
+~5000 precomputed профилей для демонстрации матчинга. См. [docs/DEMO.md](../docs/DEMO.md).
 
 ## Формат `fictional_profiles.json`
 
@@ -16,9 +16,10 @@
       "seeking": ["female"],
       "age_min": 24,
       "age_max": 34,
+      "relationship_intent": "serious",
       "prompt_ideal_evening": "Пробежка в парке, потом готовлю ужин дома.",
       "prompt_relationship_values": "Честность, юмор и желание строить что-то вместе.",
-      "prompt_occupation": "Backend-разработчик, бегаю полумарафоны, люблю готовить."
+      "prompt_occupation": "Увлекаюсь бегом и готовкой, часто хожу в горы."
     },
     "enriched": {
       "interests": ["бег", "готовка", "it"],
@@ -35,7 +36,7 @@
       "dealbreakers_detected": [],
       "summary": "Разработчик, бегает и готовит дома. Ищет серьёзные отношения."
     },
-    "embedding": [0.012, -0.034],
+    "embedding": null,
     "embedding_model": "mock-deterministic-v1",
     "skip_llm": true
   }
@@ -44,15 +45,15 @@
 
 **Важно:**
 - `external_id` — `вымышленный_NNNNN` (5 цифр), **не** `telegram_id`
-- `embedding` в seed — полный массив 1536 float (в примере сокращён)
-- `skip_llm: true` — seed loader не вызывает worker
+- `embedding: null` — seed loader вычисляет mock-embedding при загрузке
+- `skip_llm: true` — seed loader не ставит job `enrich_profile`
 
 ## Объём и разнообразие
 
 | Параметр | Значение |
 |----------|----------|
-| Количество | 80–100 |
-| ID | `вымышленный_00001` … `вымышленный_00100` |
+| Количество | **5000** (4920 узкий диапазон + 80 широкий 18–55) |
+| ID | `вымышленный_00001` … `вымышленный_05000` |
 | Пол | ~50/50 |
 | Города | Москва 70%, СПб 20%, прочие 10% |
 | Intent mix | serious 60%, casual 20%, unsure 20% |
@@ -63,13 +64,32 @@
 go run ./cmd/seed --file seed/fictional_profiles.json
 ```
 
-## Генерация (один раз)
+Загрузка ~5000 профилей занимает 1–2 минуты (вычисление mock-embeddings).
 
-1. Написать raw-тексты (скрипт / LLM batch / вручную)
-2. Прогнать через `AI_MOCK=true` enrich локально → сохранить enriched + embedding
-3. Зафиксировать JSON в репозитории
+## Генерация
 
-При `docker compose up` seed идемпотентен: `ON CONFLICT (external_id) DO NOTHING`.
+**Шаг 1 — тексты (mock enriched, без OpenAI):**
+
+```bash
+go run ./cmd/generate_seed -count 4920 -wide 80 -seed 42 -out seed/fictional_profiles.json
+```
+
+**Шаг 2 — OpenAI enrich + embeddings (перед prod/demo с реальной моделью):**
+
+```bash
+AI_MOCK=false OPENAI_API_KEY=sk-... \
+  go run ./cmd/enrich_seed -in-place -workers 5
+```
+
+См. [cmd/enrich_seed/README.md](../cmd/enrich_seed/README.md).
+
+**Шаг 3 — загрузка в Postgres:**
+
+```bash
+go run ./cmd/seed
+```
+
+Флаг `-load-db` у `enrich_seed` объединяет шаги 2 и 3.
 
 ## Legacy
 

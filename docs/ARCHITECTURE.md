@@ -170,8 +170,11 @@ Fallback для тестов: `RETRIEVAL_MODE=brute` (перебор в памя
 pref(A→B) = w1*intent_match + w2*jaccard(values) + w3*axis_similarity + w4*interest_overlap
           - penalty(dealbreakers)
 
-match(A,B) = harmonic_mean(pref(A→B), pref(B→A))
+match(A,B) = 0.8 * harmonic_mean(pref(A→B), pref(B→A))
            + 0.2 * cosine(embedding_A, embedding_B)
+```
+
+Итоговый score в диапазоне 0–1 (100%).
 ```
 
 `harmonic_mean(a,b) = 2ab / (a+b)` — слабая односторонняя совместимость тянет score вниз.

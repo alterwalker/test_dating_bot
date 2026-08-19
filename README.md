@@ -4,7 +4,7 @@
 
 ## Статус
 
-**Этап: спецификация.** Код не реализован. Зафиксированы архитектура, API-контракты, FSM бота и промпты.
+**Этап: реализация MVP.** Работают api, worker, bot, seed; mock AI по умолчанию.
 
 ## Идея
 
@@ -15,7 +15,7 @@
 
 ## Demo mode
 
-80–100 вымышленных анкет (`вымышленный_00001`, …) preloaded через seed.  
+~5000 вымышленных анкет preloaded через seed. Для OpenAI: `go run ./cmd/enrich_seed` — см. [cmd/enrich_seed/README.md](cmd/enrich_seed/README.md).  
 Подробнее: [docs/DEMO.md](docs/DEMO.md).
 
 ## Три бинарника
@@ -40,7 +40,7 @@
 | [docs/API.md](docs/API.md) | HTTP-контракты между bot ↔ api |
 | [docs/FSM.md](docs/FSM.md) | Сценарий диалога, icebreaker flow |
 | [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Сущности, JSON профиля, схема БД |
-| [docs/EMBEDDINGS.md](docs/EMBEDDINGS.md) | Embedding model, pgvector, ANN |
+| [docs/DOCKER.md](docs/DOCKER.md) | Postgres + pgvector через docker compose |
 | [prompts/](prompts/) | System/user промпты и JSON Schema |
 
 ## Промпты анкеты (для пользователя)
@@ -59,15 +59,30 @@
 
 ## Быстрый старт (после реализации)
 
+### 1. Postgres + pgvector (Docker)
+
+```bash
+docker compose up -d
+# проверка: docker compose exec postgres pg_isready -U dating -d dating_bot
+```
+
+Подробнее: [docs/DOCKER.md](docs/DOCKER.md).
+
+### 2. Go-сервисы (на хосте)
+
 ```bash
 cp .env.example .env
-# AI_MOCK=true по умолчанию — OpenAI не нужен
-# для OpenAI: AI_MOCK=false и OPENAI_API_KEY=sk-...
-# BOT_TOKEN — обязателен для bot
+go run ./cmd/seed          # вымышленные анкеты
+go run ./cmd/api &         # :8080
+go run ./cmd/worker &      # :8081
+go run ./cmd/bot           # нужен BOT_TOKEN
+```
 
-go run ./cmd/api
-go run ./cmd/worker
-go run ./cmd/bot
+Тесты:
+
+```bash
+docker compose up -d
+go test ./...
 ```
 
 ## Что сознательно не входит в scope

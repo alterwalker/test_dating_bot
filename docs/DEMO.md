@@ -23,6 +23,8 @@
 вымышленный_00002
 …
 вымышленный_00100
+…
+вымышленный_05000
 ```
 
 Формат: префикс `вымышленный_` + zero-padded номер (5 цифр).
@@ -43,12 +45,13 @@
 
 | Параметр | Значение |
 |----------|----------|
-| Количество | **80–100** анкет (минимум 50 для demo) |
+| Количество | **5000** анкет (4920 + 80 wide) |
 | Города | Москва (70%), Санкт-Петербург (20%), другие (10%) |
 | Пол | ~50/50 |
-| enriched + embedding | precomputed (`skip_llm: true` в seed) |
+| enriched | precomputed в JSON (`skip_llm: true`) |
+| embedding | вычисляется при `cmd/seed` (mock), в JSON `null` |
 
-Генерация текстов: один раз через OpenAI или скрипт + ручная правка → зафиксировать в `seed/fictional_profiles.json`.
+Генерация: `go run ./cmd/generate_seed` → `seed/fictional_profiles.json` (~6 MB).
 
 ---
 
@@ -181,7 +184,7 @@ go run ./cmd/seed --file seed/fictional_profiles.json
 ## Чеклист реализации
 
 - [ ] migration 002 — `user_kind`, `external_id`
-- [ ] `seed/fictional_profiles.json` — 80–100 анкет
+- [ ] `seed/fictional_profiles.json` — 5000 анкет
 - [ ] `cmd/seed` — загрузчик
 - [ ] matching — `DEMO_MODE` filter
 - [ ] `POST .../icebreaker` endpoint
