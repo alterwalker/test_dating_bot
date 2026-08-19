@@ -51,8 +51,8 @@ rsync -avz \
   --exclude '.env' \
   --exclude '.idea' \
   --exclude 'seed/fictional_profiles.json' \
-  --exclude 'bot' \
-  --exclude 'enrich_seed' \
+  --exclude '/bot' \
+  --exclude '/enrich_seed' \
   ./ user@YOUR_SERVER:/opt/dating_bot/
 ```
 

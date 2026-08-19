@@ -5,6 +5,8 @@
 !.env.prod.example
 /bot
 /enrich_seed
+!cmd/bot
+!cmd/enrich_seed
 seed/fictional_profiles.json
 seed/*.openai.json
 seed/smoke.json
